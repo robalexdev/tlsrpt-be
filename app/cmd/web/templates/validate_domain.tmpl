@@ -1,0 +1,46 @@
+{{ template "header" . }}
+
+<h1 class="title is-3">
+  {{ .fqdn }}
+  <span class="tag is-danger">
+  Disabled
+  </span>
+</h1>
+
+<p class="block">
+To enable this domain name, create a TXT record on 
+<code>{{ .hostname }}</code>
+with the following value:
+</p>
+
+<pre>
+<code>
+{{ .expected }}
+</code>
+</pre>
+
+{{ if .txt }}
+<p class="block">
+The following TXT records were found:
+</p>
+
+<pre>
+<code>
+{{ .txt }}
+</code>
+</pre>
+{{ end }}
+
+<!-- TODO CSRF and friends -->
+<p class="block">
+<form action="/domain/{{ .domain.ID }}" method="post">
+  <input class="button is-primary" type="submit" value="Check Domain">
+</form>
+</p>
+
+<p class="block">
+You may also manually upload TLSRPT files for this domain without enabling it.
+</p>
+
+{{ template "footer" . }}
+

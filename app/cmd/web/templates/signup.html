@@ -1,0 +1,91 @@
+{{ template "header" . }}
+
+<div class="box" style="max-width:40em">
+  <div class="field is-horizontal">
+    <div class="field-label is-normal">
+    </div>
+    <div class="field-body">
+      <div class="field">
+        <h1 class="control">
+          Please create an account to get started
+        </h1>
+      </div>
+    </div>
+  </div>
+
+  {{ if .error }}
+  <div class="field is-horizontal">
+    <div class="field-label is-normal">
+    </div>
+    <div class="field-body">
+      <div class="field">
+        <p class="help is-error">
+        {{ .error }}
+        </p>
+      </div>
+    </div>
+  </div>
+  {{ end }}
+
+  <form action="/signup" method="post">
+
+    <div class="field is-horizontal">
+      <div class="field-label is-normal">
+        <label class="label">Email Address</label>
+      </div>
+      <div class="field-body">
+        <div class="field">
+          <p class="control">
+          <input class="input" type="email" id="email" name="email" value=""><br>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="field is-horizontal">
+      <div class="field-label is-normal">
+        <label class="label">Password</label>
+      </div>
+      <div class="field-body">
+        <div class="field">
+          <p class="control">
+          <input class="input" type="password" id="password1" name="password1" minlength="8" maxlength="100" value=""><br>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="field is-horizontal">
+      <div class="field-label is-normal">
+        <label class="label">Password (again)</label>
+      </div>
+      <div class="field-body">
+        <div class="field">
+          <p class="control">
+          <input class="input" type="password" id="password2" name="password2" minlength="8" maxlength="100" value=""><br>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="field is-horizontal">
+      <div class="field-label is-normal">
+      </div>
+      <div class="field-body">
+        <div class="field">
+          <p class="control">
+          <input class="button is-primary" type="submit" value="Create Account">
+          </p>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<p>
+Already have an account?
+<a href="/signin">Sign in</a>
+</p>
+
+{{ template "footer" . }}
+

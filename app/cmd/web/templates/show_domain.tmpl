@@ -1,0 +1,30 @@
+{{ template "header" . }}
+
+<h1 class="title is-3">
+  {{ .fqdn }}
+  <span class="tag">Enabled</span>
+</h1>
+
+{{ if not .policies }}
+  <b>No reports available yet</b>
+  <p>
+  Mail servers that support TLSRPT will send aggregate reports after sending mail to this domain name.
+  </p>
+{{ else }}
+  {{ range .policies }}
+    <p>{{ .PolicyType }}</p>
+    {{ if .ManualUpload }}
+    <span class="tag">Manual Upload</span>
+    {{ end }}
+    <p>Organization: {{ .OrganizationName }}</p>
+    <p>Created: {{ .Created }}</p>
+    <p>Contact: {{ .ContactInfo }}</p>
+    <p>ReportID: {{ .ReportId }}</p>
+    <p>Range: {{ .StartDateTime }} {{ .EndDateTime }}</p>
+    <p>Successful Sessions {{ .TotalSuccessfulSessionCount }}</p>
+    <p>Failed Sessions {{ .TotalFailureSessionCount }}</p>
+  {{ end }}
+{{ end }}
+
+{{ template "footer" . }}
+

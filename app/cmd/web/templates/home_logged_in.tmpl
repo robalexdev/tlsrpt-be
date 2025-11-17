@@ -1,0 +1,27 @@
+{{ template "header" . }}
+
+<p class="block">
+Welcome back {{ .user.Email }}
+</p>
+
+{{ if .domains }}
+<p class="block">
+<h2 class="subtitle is-4">Domains</h2>
+<ul>
+{{ range .domains }}
+<li>
+<a href="/domain/{{ .ID }}">{{ .PrettyDomainName }}</a>
+{{ if not .Validated }}
+<span class="tag">unvalidated</span>
+{{ end }}
+</li>
+{{ end }}
+</ul>
+</p>
+{{ end }}
+
+<p class="block">
+<a class="button" href="/domain/add">Add a domain</a>.
+</p>
+{{ template "footer" . }}
+

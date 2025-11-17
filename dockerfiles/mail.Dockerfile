@@ -1,9 +1,9 @@
 FROM golang:1.24 AS build-stage
-WORKDIR /workdir
 
-COPY app/go.mod app/go.sum ./
+WORKDIR /workdir
+COPY app/ /workdir/app
+WORKDIR  /workdir/app/cmd/mail
 RUN go mod download
-COPY app/*.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app
 
 

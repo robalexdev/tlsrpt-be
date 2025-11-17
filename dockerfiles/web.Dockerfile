@@ -1,23 +1,19 @@
 FROM golang:1.24 AS build-stage
 
 WORKDIR /workdir
-COPY app/go.mod app/go.sum ./
+COPY app/ /workdir/app
+WORKDIR  /workdir/app/cmd/web
 RUN go mod download
-COPY app/*.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app
-
-WORKDIR /workdir2
-COPY health/go.mod ./
+WORKDIR  /workdir/app/cmd/health
 RUN go mod download
-COPY health/*.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o /health
-
 
 ####
 FROM gcr.io/distroless/base-debian12 AS build-release-stage
 
 WORKDIR /templates
-COPY app/templates/*.html app/templates/*tmpl .
+COPY app/cmd/web/templates/*.html app/cmd/web/templates/*tmpl .
 
 WORKDIR /
 COPY --from=build-stage /app /app
