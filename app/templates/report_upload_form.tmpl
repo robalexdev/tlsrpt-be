@@ -1,0 +1,26 @@
+{{ template "header" . }}
+
+<h1 class="title is-4">
+  TLSRPT Analysis
+</h1>
+
+<p class="block">
+  Upload a TLS Report
+</p>
+
+<form action="/uploadReport" method="post" enctype="multipart/form-data">
+  <p class="block">
+    <input class="button" type="file" id="file" name="file">
+  </p>
+
+  {{ if .error }}
+  <p class="block help is-danger">{{ .error }}</p>
+  {{ end }}
+
+  <p class="block">
+    <input class="button is-primary" type="submit" value="Upload">
+  </p>
+</form>
+
+{{ template "footer" . }}
+

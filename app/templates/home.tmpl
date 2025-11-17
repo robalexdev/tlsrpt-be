@@ -1,0 +1,31 @@
+{{ template "header" . }}
+<h1 class="title is-4">
+  TLSRPT Analysis
+</h1>
+
+<p>
+TLS Reporting (RFC-8460) allows mail servers to share delivery statistics with the receiving mail server.
+</p>
+
+<p>
+This service helps domain owners aggregate reports and receive notifications on configuration errors.
+</p>
+
+<p>
+The service provides domain owners with an email address, which the user sets in their TLSRPT DNS record.
+This instructs mail senders to deliver TLS reports to this service.
+</p>
+
+<p>
+Notification of TLS errors can be delivered via Slack bot.
+</p>
+
+
+
+
+
+
+
+
+{{ template "footer" . }}
+

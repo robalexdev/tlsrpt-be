@@ -12,14 +12,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type LogLines struct {
-	gorm.Model
-	Uuid    string
-	Service string
-	Line    string
-	Public  bool
-}
-
 func main() {
 	// Postfix input
 	recipient := os.Getenv("ORIGINAL_RECIPIENT")
@@ -27,18 +19,7 @@ func main() {
 	if !success {
 		panic(fmt.Sprintf("Can't find user ID in: %s\n", recipient))
 	}
-
-	// From CAB baseline requirements
-	ADMIN_USERS_IDS := []string{
-		"admin",
-		"administrator",
-		"webmaster",
-		"hostmaster",
-		"postmaster",
-	}
-
-	isAdmin := slices.Contains(ADMIN_USERS_IDS, userId)
-	if len(userId) != 36 && !isAdmin {
+	if len(userId) != 36 {
 		panic(fmt.Sprintf("User ID looks invalid: %s\n", userId))
 	}
 
@@ -56,8 +37,9 @@ func main() {
 		panic(fmt.Sprintf("Unable to connect to database using %s: %v\n", password, err))
 	}
 
-	// Auto-migration
-	db.AutoMigrate(&LogLines{})
+  //
+	// Auto-migration should happen via web/api
+  //
 
 	// Log metadata about the message
 	logLine := fmt.Sprintf(`Message Received:

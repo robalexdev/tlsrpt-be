@@ -3,76 +3,124 @@
 set -e
 
 docker compose --env-file dev.env build
-docker compose --env-file dev.env down || true
 
+# Full rebuild
+docker compose --env-file dev.env down -t 0 || true
 # Purge old DB
-docker volume rm postfix-tls-audit_postfix-audit-db || true
+docker volume rm tlsrpt-be_tlsrpt-db || true
 
 docker compose --env-file dev.env up -d --wait --remove-orphans
 
+EMAIL="$(uuidgen | tr -d '-')@example.com"
+PASSWORD=$(uuidgen)
+TEST_DOMAIN=göpher.test
+TEST_DOMAIN_NORMALIZED=xn--gpher-jua.test
+echo "User ${USERNAME} ${PASSWORD}"
 
-subdomains=(a b c d e f)
-ips=(127.0.0.1 127.0.0.2 "::1" 127.0.0.10 127.0.0.11 127.0.0.12)
-for i in {0..5}
-do
-    subdomain=${subdomains[$i]}
-    ip=${ips[$i]}
-    echo "Checking server ($i / $ip) $subdomain"
-    UUID=$(uuidgen)
-    echo "Using USERID: ${UUID}"
+COOKIE_JAR=cookies.test
 
-    # Ensure the MTA-STS policy is available on both HTTP and HTTPS
-    # Not on 5th, or 6th
-    if (( $i != 5 && $i != 6 ));
-    then
-        curl -k -H "Host: mta-sts.$subdomain.audit.alexsci.com" https://127.0.0.1:8443/.well-known/mta-sts.txt | grep "enforce"
-        # Make sure it was logged
-        curl -k -H "Host: api.audit.alexsci.com" https://127.0.0.1:8443/poll -F users= | grep "mta-sts.${subdomain}.audit.alexsci.com"
-    else
-        echo "$subdomain won't have a policy hosted"
-    fi
+rm ${COOKIE_JAR} || true
 
-    echo "Checking that email hasn't been seen"
-    curl -k -H "Host: api.audit.alexsci.com" https://127.0.0.1:8443/health | grep "pong"
-    curl -k -H "Host: api.audit.alexsci.com" https://127.0.0.1:8443/poll -F users=$UUID | grep "{}"
+echo "Create test user" | tee -a run.log
+curl \
+  -k \
+  -H "Host: tlsrpt.alexsci.com" \
+  --cookie-jar ${COOKIE_JAR} \
+  https://localhost:8443/signup \
+  -d "email=${EMAIL}&password1=${PASSWORD}&password2=${PASSWORD}" > run.log
 
-    echo "Send the emails"
-    if (( $i == 2 ));
-    then
-        # This one uses IPv6
-        ./test-send-email.exp "[${ip}]" "${UUID}" "${subdomain}.audit.alexsci.com"
-    elif (( $i == 1 || $i == 5));
-    then
-        # These ones doesn't support TLS
-        ./test-send-email-no-tls.exp "${ip}" "${UUID}" "${subdomain}.audit.alexsci.com"
-    else
-        ./test-send-email.exp "${ip}" "${UUID}" "${subdomain}.audit.alexsci.com"
-    fi
+echo "Ensure logged in" | tee -a run.log
+curl \
+  -k \
+  -H "Host: tlsrpt.alexsci.com" \
+  --cookie ${COOKIE_JAR} \
+  https://localhost:8443/ | tee -a run.log | grep "${EMAIL}"
 
-    if (( $i != 4 && $i != 6));
-    then
-      # All but the 4th and 6th support unencrypted emails
-      # Try to send an email to an unrelated domain (should fail)
-      ./test-open-relay.exp "${ip}" "${UUID}" "${subdomain}.audit.alexsci.com"
-    fi
+echo "Log out" | tee -a run.log
+curl \
+  -k \
+  -X POST \
+  -H "Host: tlsrpt.alexsci.com" \
+  --cookie ${COOKIE_JAR} \
+  https://localhost:8443/signout >> run.log
 
-    # Email processing takes some time...
-    sleep 1
+echo "Ensure logged out" | tee -a run.log
+curl \
+  -k \
+  -H "Host: tlsrpt.alexsci.com" \
+  --cookie ${COOKIE_JAR} \
+  https://localhost:8443/ | tee -a run.log | egrep -v "${EMAIL}"
 
-    echo "Checking that email has been seen"
-    curl -k -H "Host: api.audit.alexsci.com" https://127.0.0.1:8443/poll -F users=$UUID | grep "$UUID" | grep "Message Received"
-    curl -k -H "Host: api.audit.alexsci.com" https://127.0.0.1:8443/poll -F users=$UUID -F secret=INSECURE-1234 | grep "$UUID" | grep "MSG: This Is The Message"
+echo "Try the wrong password" | tee -a run.log
+curl \
+  -k \
+  -H "Host: tlsrpt.alexsci.com" \
+  --cookie-jar ${COOKIE_JAR} \
+  https://localhost:8443/signin \
+  -d "email=${EMAIL}&password=123456789" | tee -a run.log | grep "Invalid username or password"
 
-    echo ""
-    echo "Server $subdomain looks OK!"
-    echo ""
-done
+echo "Log back in" | tee -a run.log
+curl \
+  -k \
+  -H "Host: tlsrpt.alexsci.com" \
+  --cookie-jar ${COOKIE_JAR} \
+  https://localhost:8443/signin \
+  -d "email=${EMAIL}&password=${PASSWORD}" >> run.log
 
-# Check TLS reporting
-curl -k -H "Host: api.audit.alexsci.com" https://127.0.0.1:8443/tlsrpt -d "TLS REPORT"
-curl -k -H "Host: api.audit.alexsci.com" https://127.0.0.1:8443/poll -F users= | grep "TLS REPORT"
+echo "Ensure logged in (again)" | tee -a run.log
+curl \
+  -k \
+  -H "Host: tlsrpt.alexsci.com" \
+  --cookie ${COOKIE_JAR} \
+  https://localhost:8443/ | tee -a run.log | grep "${EMAIL}"
 
-docker compose --env-file dev.env down
-echo ""
-echo "SUCCESS!"
-echo ""
+
+echo "Add a domain" | tee -a run.log
+curl \
+  -k \
+  -L \
+  -H "Host: tlsrpt.alexsci.com" \
+  --cookie ${COOKIE_JAR} \
+  https://localhost:8443/domain/add \
+  -d "domain=${TEST_DOMAIN}" | tee -a run.log | grep "${TEST_DOMAIN_NORMALIZED}"
+
+echo "Ensure not validated yet" | tee -a run.log
+curl \
+  -k \
+  -H "Host: tlsrpt.alexsci.com" \
+  --cookie ${COOKIE_JAR} \
+  https://localhost:8443/domain/1/ | tee -a run.log | grep "Check Domain"
+
+echo "Validate it (test domain auto validates)" | tee -a run.log
+curl \
+  -k \
+  -H "Host: tlsrpt.alexsci.com" \
+  -X POST \
+  --cookie ${COOKIE_JAR} \
+  https://localhost:8443/domain/1/ >> run.log
+
+echo "Ensure validated now" | tee -a run.log
+curl \
+  -k \
+  -H "Host: tlsrpt.alexsci.com" \
+  --cookie ${COOKIE_JAR} \
+  https://localhost:8443/domain/1/ | tee -a run.log | grep "Enabled"
+
+echo "Upload a report (json)" | tee -a run.log
+curl \
+  -k \
+  -H "Host: tlsrpt.alexsci.com" \
+  --cookie ${COOKIE_JAR} \
+  https://localhost:8443/uploadReport \
+  --form "file=@report.json" >> run.log
+
+echo "Upload a report (json)" | tee -a run.log
+curl \
+  -k \
+  -H "Host: tlsrpt.alexsci.com" \
+  --cookie ${COOKIE_JAR} \
+  https://localhost:8443/uploadReport \
+  --form "file=@report-2.json" >> run.log
+
+echo "SUCCESS"
+

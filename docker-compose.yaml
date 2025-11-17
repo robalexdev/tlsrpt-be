@@ -1,20 +1,9 @@
 services:
-  #
-  # Mail Servers
-  #
-
-  # Valid: MTA-STS with Let's Encrypt
-  postfix-le-mta-sts:
+  mail:
     build:
-      context: postfix
-      args:
-        name: a
-        certdomain: audit.alexsci.com
-        tlsSecurityLevel: may
+      context: .
+      dockerfile: dockerfiles/mail.Dockerfile
     restart: unless-stopped
-    networks:
-      privatenet:
-        ipv4_address: 10.11.26.11
     ports:
       - "${IP0:?error}:${HOST_MAIL_PORT:?error}:25"
     volumes:
@@ -22,166 +11,50 @@ services:
     environment:
       - POSTGRES_PASSWORD
     depends_on:
-      - db
+      web:
+        condition: service_healthy
+      db:
+        condition: service_healthy
 
-  # Invalid: MTA-STS but doesn't use TLS
-  postfix-no-encrypt:
+  web:
     build:
-      context: postfix
-      args:
-        name: b
-        tlsSecurityLevel: none
+      context: .
+      dockerfile: dockerfiles/web.Dockerfile
     restart: unless-stopped
-    networks:
-      privatenet:
-        ipv4_address: 10.11.26.12
-    ports:
-      - "${IP1:?error}:${HOST_MAIL_PORT:?error}:25"
-    environment:
-      - POSTGRES_PASSWORD
     depends_on:
-      - db
-
-  # Valid: MTA-STS with Let's Encrypt (IPv6 tester)
-  postfix-le-mta-sts-ipv6:
-    build:
-      context: postfix
-      args:
-        name: c
-        certdomain: audit.alexsci.com
-        tlsSecurityLevel: may
-    restart: unless-stopped
-    networks:
-      privatenet:
-        ipv4_address: 10.11.26.13
-    ports:
-      - "${IPV6_0:?error}:${HOST_MAIL_PORT:?error}:25"
-    volumes:
-      - "${CERTS_PATH:?error}/:/etc/letsencrypt/:ro"
-    environment:
-      - POSTGRES_PASSWORD
-    depends_on:
-      - db
-
-  # Invalid: MTA-STS with unknown/untrusted CA
-  postfix-uk-mta-sts:
-    build:
-      context: postfix
-      args:
-        name: d
-        certdomain: mail-b.audit.alexsci.com
-        tlsSecurityLevel: may
-    restart: unless-stopped
-    networks:
-      privatenet:
-        ipv4_address: 10.11.26.14
-    ports:
-      - "${IPV6_1:?error}:${HOST_MAIL_PORT:?error}:25"
-    volumes:
-      - "${INVALID_CERTS_PATH:?error}/:/etc/letsencrypt/:ro"
-    environment:
-      - POSTGRES_PASSWORD
-    depends_on:
-      - db
-
-  # Valid: MTA-STS with Let's Encrypt (IPv6, requires TLS)
-  postfix-le-mta-sts-required:
-    build:
-      context: postfix
-      args:
-        name: e
-        certdomain: audit.alexsci.com
-        tlsSecurityLevel: encrypt
-    restart: unless-stopped
-    networks:
-      privatenet:
-        ipv4_address: 10.11.26.15
-    ports:
-      - "${IPV6_2:?error}:${HOST_MAIL_PORT:?error}:25"
-    volumes:
-      - "${CERTS_PATH:?error}/:/etc/letsencrypt/:ro"
-    environment:
-      - POSTGRES_PASSWORD
-    depends_on:
-      - db
-
-  # Valid: Legacy / Plaintext only - No MTA-STS
-  postfix-legacy-no-tls:
-    build:
-      context: postfix
-      args:
-        name: f
-        certdomain: audit.alexsci.com
-        tlsSecurityLevel: none
-    restart: unless-stopped
-    networks:
-      privatenet:
-        ipv4_address: 10.11.26.16
-    ports:
-      - "${IPV6_3:?error}:${HOST_MAIL_PORT:?error}:25"
-    environment:
-      - POSTGRES_PASSWORD
-    depends_on:
-      - db
-
-  #
-  # API for web frontend
-  #
-  api:
-    build: api 
-    restart: unless-stopped
-    networks:
-      privatenet:
-        ipv4_address: 10.11.26.34
-    depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - POSTGRES_PASSWORD
       - ADMIN_SECRET
 
-  #
-  # Static hosting for MTA-STS policy files
-  #
   nginx:
-    build:
-      context: nginx
-      args:
-        certdomain: audit.alexsci.com
+    build: nginx
     restart: unless-stopped
-    networks:
-      privatenet:
-        ipv4_address: 10.11.26.35
     ports:
       - "${IP0:?error}:${HOST_WEBSECURE_PORT:?error}:443"
+      - "127.0.0.1:80:80"
     volumes:
       - "${CERTS_PATH:?error}/:/etc/letsencrypt/:ro"
     depends_on:
-      - api
+      web:
+        condition: service_healthy
 
   db:
     image: postgres:15.2
     restart: unless-stopped
     volumes:
-      - postfix-audit-db:/var/lib/postgresql/data
-    networks:
-      privatenet:
-        ipv4_address: 10.11.26.36
+      - tlsrpt-db:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_DB=audit
+      - POSTGRES_DB=tlsrpt
       - POSTGRES_PASSWORD
-
-networks:
-  privatenet:
-    name: postfix-audit-net
-    external: false
-    internal: false
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.11.26.0/24
-          ip_range: 10.11.26.0/26
-          gateway: 10.11.26.254
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "tlsrpt"]
+      interval: 30s
+      timeout: 60s
+      retries: 3
+      start_period: 60s
 
 volumes:
-  postfix-audit-db:
+  tlsrpt-db:

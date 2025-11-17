@@ -1,0 +1,12 @@
+package main
+
+import (
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
+
+func handleLogOut(c *gin.Context, db *gorm.DB, _ *User) {
+	view := View{c}
+	LogOut(c, db)
+	view.RedirectHome()
+}

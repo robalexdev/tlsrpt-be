@@ -19,3 +19,13 @@ A collection of mail servers that can audit MTA-STS.
 * OpenTofu IaC
 * DigitalOcean droplet
 
+
+## Debugging
+
+Running SQL queries on test stack:
+
+    $ docker compose --env-file dev.env exec --user postgres db psql -d tlsrpt
+    tlsrpt=# SELECT * FROM users;
+    ...
+
+

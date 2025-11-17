@@ -18,12 +18,9 @@ create_cert() {
     mv "${CERT_PREFIX}${DOMAIN}.pem"     ./invalid-certs/live/$DOMAIN/fullchain.pem
 }
 
-for sub in {a,b,c,d}
-do
-    create_cert "mail-${sub}.audit.alexsci.com" "" ""
-done
+create_cert "tlsrpt.alexsci.com" "" ""
 
 # This is also used as mta-sts.*.alexsci.com although it isn't valid for those host names
 # The whole CA is untrusted so ¯\_(ツ)_/¯
-create_cert "audit.alexsci.com" "*." "_wildcard."
+create_cert "tlsrpt.alexsci.com" "*." "_wildcard."
 

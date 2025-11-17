@@ -1,0 +1,21 @@
+{
+  "organization-name": "Example Inc.",
+  "date-range": {
+    "start-datetime": "2025-08-04T00:00:00Z",
+    "end-datetime": "2025-08-04T23:59:59Z"
+  },
+  "contact-info": "smtp-tls-reporting@example.com",
+  "report-id": "2025-08-04T00:00:00Z_example.org",
+  "policies": [
+    {
+      "policy": {
+        "policy-type": "no-policy-found",
+        "policy-domain": "xn--gpher-jua.test"
+      },
+      "summary": {
+        "total-successful-session-count": 99,
+        "total-failure-session-count": 102
+      }
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 # Templated domain settings
 myhostname = {{ hostname }}
-mydestination = {{ destname }}
+mydestination = {{ hostname }}
 
-virtual_alias_maps = inline:{% raw %}{{{% endraw %}@{{ destname }}=catchall@{{ destname }}{% raw %}}}{% endraw %}
+virtual_alias_maps = inline:{% raw %}{{{% endraw %}@{{ hostname }}=catchall@{{ hostname }}{% raw %}}}{% endraw %}
 
 # Call out to golang binary for processing
 mailbox_command = /app
@@ -19,12 +19,9 @@ smtpd_relay_restrictions = reject_unauth_destination
 smtp_tls_security_level = dane-only
 
 # Enable TLS
-smtpd_tls_security_level = {{ tlsSecurityLevel }}
-
-{% if certdomain %}
-smtpd_tls_cert_file = /etc/letsencrypt/live/{{ certdomain }}/fullchain.pem
-smtpd_tls_key_file = /etc/letsencrypt/live/{{ certdomain }}/privkey.pem
-{% endif %}
+smtpd_tls_security_level = may
+smtpd_tls_cert_file = /etc/letsencrypt/live/{{ hostname }}/fullchain.pem
+smtpd_tls_key_file = /etc/letsencrypt/live/{{ hostname }}/privkey.pem
 
 # Logging
 maillog_file = /dev/stdout
