@@ -114,13 +114,28 @@ curl \
   https://localhost:8443/uploadReport \
   --form "file=@report.json" >> run.log
 
-echo "Upload a report (json)" | tee -a run.log
+echo "Ensure the uploaded TLS report is visible" | tee -a run.log
 curl \
   -k \
   -H "Host: tlsrpt.alexsci.com" \
   --cookie ${COOKIE_JAR} \
-  https://localhost:8443/uploadReport \
-  --form "file=@report-2.json" >> run.log
+  https://localhost:8443/domain/1/ | tee -a run.log | grep "report-id-from-report.json"
+
+echo "Ensure not an open relay" | tee -a run.log
+./test-open-relay.exp 127.0.0.1 | tee -a run.log | grep "Relay access denied"
+
+echo "Email a TLSRPT" | tee -a run.log
+./test-send-email.exp 127.0.0.1 d-1 tlsrpt.alexsci.com | tee -a run.log | grep "Ok: queued as"
+
+# Wait for postfix queue to process the mail
+sleep 2
+
+echo "Ensure the emailed TLS report is visible" | tee -a run.log
+curl \
+  -k \
+  -H "Host: tlsrpt.alexsci.com" \
+  --cookie ${COOKIE_JAR} \
+  https://localhost:8443/domain/1/ | tee -a run.log | grep "report-id-of-report-over-email-1234"
 
 echo "SUCCESS"
 

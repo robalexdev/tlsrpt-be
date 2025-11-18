@@ -54,7 +54,6 @@ type Domain struct {
 	// But only one should be valid
 	// TODO: Valdating one invalidates any others
 	FQDN           string
-	Tag            string `gorm:"default:gen_random_uuid()"`
 	Validated      bool
 	DNSLastChecked sql.NullTime
 }
@@ -69,7 +68,7 @@ func (d *Domain) VerificationHostname() string {
 }
 
 func (d *Domain) VerificationValue() string {
-	return fmt.Sprintf("v=TLSRPTv1; rua=mailto:%s@tlsrpt.alexsci.com;", d.Tag)
+	return fmt.Sprintf("v=TLSRPTv1; rua=mailto:d-%d@tlsrpt.alexsci.com;", d.ID)
 }
 
 func (d *Domain) PrettyDomainName() string {

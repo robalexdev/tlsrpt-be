@@ -8,6 +8,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /app
 
 
 ####
+FROM build-stage AS testing
+RUN ./test.sh && touch /success
+
+
+####
 FROM python:latest AS template-stage
 RUN pip install jinja2-cli
 COPY postfix/main.cf.tmpl /main.cf.tmpl
@@ -18,6 +23,9 @@ RUN jinja2 /main.cf.tmpl           \
 
 ####
 FROM ubuntu:24.04
+
+# Wait for test container to build
+COPY --from=testing /success /success
 
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \

@@ -5,7 +5,7 @@
     "end-datetime": "2025-08-04T23:59:59Z"
   },
   "contact-info": "smtp-tls-reporting@example.com",
-  "report-id": "2025-08-04T00:00:00Z_example.org",
+  "report-id": "report-id-from-report.json",
   "policies": [
     {
       "policy": {

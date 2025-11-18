@@ -5,4 +5,5 @@ use (
 	./cmd/mail
 	./cmd/web
 	./model
+	./report
 )

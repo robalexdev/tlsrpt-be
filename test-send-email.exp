@@ -4,10 +4,9 @@ set TARGET_IP [lindex $argv 0]
 set UUID [lindex $argv 1]
 set DOMAIN [lindex $argv 2]
 
-# openssl won't verify the cert, just warns
-spawn openssl s_client -connect $TARGET_IP:1025 -starttls smtp
+spawn telnet $TARGET_IP 1025
 
-expect "read R BLOCK\r"
+expect -r "220 .*\r"
 send -- "EHLO hi\r"
 expect -re "250 .*\r"
 send -- "mail from: me@me\r"
@@ -16,9 +15,32 @@ send -- "rcpt to: $UUID@$DOMAIN\r"
 expect "250 2.1.5 Ok\r"
 send -- "data\r"
 expect "354 End data with <CR><LF>.<CR><LF>\r"
-send -- "Subject: test\r"
+
+send -- "From: tlsrpt@mail.sender.example.com\r"
+send -- "Date: Fri, May 09 2017 16:54:30 -0800\r"
+send -- "To: $UUID@$DOMAIN\r"
+send -- "Subject: Report Domain: xn--gpher-jua.test Submitter: mail.sender.example.com Report-ID: <735ff.e317+bf22029@xn--gpher-jua.test>\r"
+send -- "TLS-Report-Domain: xn--gpher-jua.test\r"
+send -- "TLS-Report-Submitter: mail.sender.example.com\r"
+send -- "MIME-Version: 1.0\r"
+send -- "Content-Type: multipart/report; report-type=\"tlsrpt\"; boundary=\"----=_NextPart_000_024E_01CC9B0A.AFE54C00\"\r"
+send -- "Content-Language: en-us\r"
 send -- "\r"
-send -- "This Is The Message\r"
+
+send -- "This is a multipart message in MIME format."
+send -- "\r"
+send -- "------=_NextPart_000_024E_01CC9B0A.AFE54C00\r"
+send -- "Content-Type: text/plain; charset=\"us-ascii\"\r"
+send -- "Content-Transfer-Encoding: 7bit\r"
+send -- "\r"
+send -- "This is an aggregate TLS report from mail.sender.example.com\r"
+send -- "\r"
+send -- "------=_NextPart_000_024E_01CC9B0A.AFE54C00\r"
+send -- "Content-Type: application/tlsrpt+gzip\r"
+send -- "Content-Transfer-Encoding: base64\r"
+send -- "Content-Disposition: attachment; filename=\"mail.sender.example!example.com!1013662812!1013749130.json.gz\"\r"
+send -- "\r"
+send -- "H4sIAAAAAAAAA6VUbWvbMBD+nl8hvG+jcmU7zlLD2EYbtg+jLU0ZWUcxqqWk2mzJSHJwVvLfd/JLmhfK0g0MlnTP6e557nRPA4Q8pRdUit/UCiWxpAX3EuSdq6KkcoVn3onDMGo51lQunPEJTuDMWKotdhYrWqeQBCNMhpgEt4QkzXfX+AOaS/YSNoyS+Ay+Ow+g6yZepqSlmcVCzpVDG2uw5qXSVsjFx6xLrvZ5TYsy522SLQAL5jw2G6zmnStWS64xL6jIcRBGw9arVLnIBDfg9KNJtaXXW1Ybwltn2K5K3uXVEdy2Gqshzc2FnRGCG5A4QdPb6TLYcgNboRhPkOXG8dsz1Ql667uk/Z73aof3M5LWKV3APePRkBBvY7o/zJApuFA6BrXEeFE+gjA/K+q7DLYJFTV+VHAEwBdz6NDr3s0zVVFQvSecVZbm2FRZxo2ZV7CEv+u4TFXSBYijcHSyj59DyErzA3BEooOwPZZxCyuzI//Ttk6amyq3mxpmHLpqLjLX4rwuheZsV1cDvQtlwYWlWJRt85IgYQ/jhD5kDLo8CJNkr6KaZ1wsG7dWw/5lFXVwVDUdHc4OmAeEbFDrk6MINg/V5gZLZaECpXsL/8Axeg3H8CiOzxf0MSOf+EEQ+fHoKDUgyR0YZUy4OQat40aHLpqp5q5+tLY0yelpOwqMfzBDOkvq/NAHJBh6j2IyiofhO5QhjMIIsegNmnZiXio77aVE3mtLsqS5YO3E7dr2b+UIzsZ+HPhQfn8UHq3i+OiC4Qea/arK/2nN6ADknqPm1DQg1kSaxeQs/ZZObm7S65ur2ff0+tPtl/Tr5PIz/Caz88nkYnKxpWe3uh/0u/vBevAHmMvHFLgGAAA=\r"
 send -- ".\r"
 expect "250 2.0.0 Ok: queued as"
 send -- "quit\r"
