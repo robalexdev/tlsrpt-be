@@ -64,7 +64,7 @@ func (d *Domain) AfterDelete(tx *gorm.DB) error {
 }
 
 func (d *Domain) VerificationHostname() string {
-	return fmt.Sprintf("_tlsrpt.%s", d.FQDN)
+	return fmt.Sprintf("_smtp._tls.%s", d.FQDN)
 }
 
 func (d *Domain) VerificationValue() string {

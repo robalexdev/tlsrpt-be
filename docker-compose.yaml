@@ -58,3 +58,4 @@ services:
 
 volumes:
   tlsrpt-db:
+    name: ${POSTGRES_VOLUME}

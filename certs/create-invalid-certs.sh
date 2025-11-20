@@ -20,7 +20,3 @@ create_cert() {
 
 create_cert "tlsrpt.alexsci.com" "" ""
 
-# This is also used as mta-sts.*.alexsci.com although it isn't valid for those host names
-# The whole CA is untrusted so ¯\_(ツ)_/¯
-create_cert "tlsrpt.alexsci.com" "*." "_wildcard."
-

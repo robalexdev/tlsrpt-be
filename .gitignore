@@ -3,3 +3,4 @@ db/
 *.swp
 cookies.test
 run.log
+prod.env
