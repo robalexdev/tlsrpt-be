@@ -1,31 +1,4 @@
-# MTA-STS Auditor
+# TLS Report Collection and Analysis
 
-A collection of mail servers that can audit MTA-STS.
-
-
-## Blog post
-
-[Learn more in the blog post](https://alexsci.com/blog/smtp-downgrade-attacks-and-mta-sts/)
-
-
-## Stack
-
-* Docker Compose
-* Postfix mail servers
-* Postgres database
-* Go Gin app server
-* NGINX reverse proxy
-* Let's Encrypt Certificates
-* OpenTofu IaC
-* DigitalOcean droplet
-
-
-## Debugging
-
-Running SQL queries on test stack:
-
-    $ docker compose --env-file dev.env exec --user postgres db psql -d tlsrpt
-    tlsrpt=# SELECT * FROM users;
-    ...
-
+A web service that permits collection of TLS Reports (8460) and provides analysis.
 
